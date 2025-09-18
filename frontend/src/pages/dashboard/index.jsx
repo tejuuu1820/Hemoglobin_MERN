@@ -1,5 +1,11 @@
 import { useFormik } from 'formik';
-import { AlertTriangle, CheckCircle, XCircle } from 'lucide-react';
+import {
+  AlertTriangle,
+  CheckCircle,
+  Pencil,
+  Trash2,
+  XCircle,
+} from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Bar,
@@ -47,25 +53,60 @@ export default function HemoglobinTestApp() {
     }
   }
 
-  // Formik form
+  // Delete patient
+  const handleDelete = async (id) => {
+    if (!window.confirm('Are you sure you want to delete this record?')) return;
+    try {
+      await hemoglobinService.deletePatient(id);
+      setPatients((prev) => prev.filter((p) => p._id !== id));
+    } catch (error) {
+      console.error('Error deleting patient:', error);
+    }
+  };
+
+  // Edit patient (prefill form)
+  const handleEdit = (patient) => {
+    formik.setValues({
+      name: patient.name,
+      age: patient.age,
+      gender: patient.gender,
+      hemo: patient.hemo,
+    });
+    formik.setFieldValue('_id', patient._id); // track editing mode
+  };
+
+  // Modify form submit to handle edit vs add
   const formik = useFormik({
     initialValues: {
+      _id: null,
       name: '',
       age: '',
       gender: 'M',
       hemo: '',
     },
     onSubmit: async (values, { resetForm }) => {
-      const newPatient = {
-        ...values,
+      const payload = {
         name: values.name,
         age: Number(values.age),
+        gender: values.gender,
         hemo: Number(values.hemo),
-        // category: classifyHemoglobin(values),
       };
+
       try {
-        const saved = await hemoglobinService.addPatient(newPatient);
-        setPatients((prev) => [...prev, saved]);
+        if (values._id) {
+          // Update existing
+          const updated = await hemoglobinService.updatePatient(
+            values._id,
+            payload
+          );
+          setPatients((prev) =>
+            prev.map((p) => (p._id === updated._id ? updated : p))
+          );
+        } else {
+          // Add new
+          const saved = await hemoglobinService.addPatient(payload);
+          setPatients((prev) => [...prev, saved]);
+        }
         resetForm();
         loadData();
       } catch (error) {
@@ -107,8 +148,11 @@ export default function HemoglobinTestApp() {
   }
 
   return (
-    <div className="p-6 max-w-6xl mx-auto">
-      <h1 className="text-3xl font-bold mb-6 text-center text-blue-800">
+    <div
+      className="p-6 mx-auto"
+      style={{ backgroundImage: "url('/images/bg.jpeg')" }}
+    >
+      <h1 className="text-3xl font-bold mb-6 text-center text-white">
         Interactive Hemoglobin Test Dashboard
       </h1>
 
@@ -206,11 +250,12 @@ export default function HemoglobinTestApp() {
               <th className="p-2 text-left">Gender</th>
               <th className="p-2 text-left">Hemoglobin (g/dL)</th>
               <th className="p-2 text-left">Category</th>
+              <th className="p-2 text-left">Actions</th>
             </tr>
           </thead>
           <tbody>
             {patients.map((p, index) => (
-              <tr key={p.id} className="border-t hover:bg-gray-50 transition">
+              <tr key={p._id} className="border-t hover:bg-gray-50 transition">
                 <td className="p-2">{index + 1}</td>
                 <td className="p-2">{p.name}</td>
                 <td className="p-2">{p.age}</td>
@@ -219,13 +264,29 @@ export default function HemoglobinTestApp() {
                 <td className="p-2">
                   <CategoryBadge category={p.category} />
                 </td>
+                <td className="p-2 flex gap-2">
+                  <button
+                    onClick={() => handleEdit(p)}
+                    className="text-blue-600 hover:text-blue-800"
+                    title="Edit"
+                  >
+                    <Pencil size={18} />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(p._id)}
+                    className="text-red-600 hover:text-red-800"
+                    title="Delete"
+                  >
+                    <Trash2 size={18} />
+                  </button>
+                </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
 
-      <footer className="text-xs text-gray-500 mt-6 text-center">
+      <footer className="text-xs text-white mt-6 text-center">
         Thresholds: Male (Low &lt; 13.8, High &gt; 17.2), Female (Low &lt; 12.1,
         High &gt; 15.1)
       </footer>
