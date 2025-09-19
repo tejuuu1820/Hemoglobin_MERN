@@ -23,6 +23,16 @@ const getPatients = async () => {
   }
 };
 
+const getPatientsByUserId = async (userId) => {
+  try {
+    const res = await api.get(API_ENDPOINTS.PATIENTS_BY_USER_ID(userId));
+    return res.data;
+  } catch (e) {
+    console.error('Get Patients Error:', e);
+    throw e;
+  }
+};
+
 // ✅ Fetch single patient by ID
 const getPatientById = async (id) => {
   try {
@@ -60,6 +70,7 @@ const deletePatient = async (id) => {
 const hemoglobinService = {
   addPatient,
   getPatients,
+  getPatientsByUserId,
   getPatientById,
   updatePatient,
   deletePatient,

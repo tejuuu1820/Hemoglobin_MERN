@@ -16,22 +16,26 @@ import {
   XAxis,
   YAxis,
 } from 'recharts';
+import * as Yup from 'yup';
+import { useAuth } from '../../context/auth-context';
 import hemoglobinService from '../../services/hemoglobin.service';
 
 export default function HemoglobinTestApp() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(false);
+  const { isAdminAuth, auth } = useAuth();
 
-  // Load patients from backend on mount
+  // Load patients on mount
   useEffect(() => {
     loadData();
-  }, []);
+  }, [isAdminAuth]);
 
   const loadData = async () => {
     setLoading(true);
     try {
-      const data = await hemoglobinService.getPatients();
-      console.log(data);
+      const data = isAdminAuth
+        ? await hemoglobinService.getPatients()
+        : await hemoglobinService.getPatientsByUserId(auth.user.id);
       setPatients(data.data);
     } catch (error) {
       console.error('Error fetching patients:', error);
@@ -53,7 +57,21 @@ export default function HemoglobinTestApp() {
     }
   }
 
-  // Delete patient
+  // ✅ Suggestion generator based on category
+  function getSuggestion(category) {
+    switch (category) {
+      case 'Low':
+        return 'Consider consulting a doctor. Iron-rich foods may help.';
+      case 'High':
+        return 'Monitor hydration and consult a physician if persistent.';
+      case 'Normal':
+        return 'Maintain your current healthy lifestyle!';
+      default:
+        return 'No suggestion available';
+    }
+  }
+
+  // Delete (only admin)
   const handleDelete = async (id) => {
     if (!window.confirm('Are you sure you want to delete this record?')) return;
     try {
@@ -64,18 +82,31 @@ export default function HemoglobinTestApp() {
     }
   };
 
-  // Edit patient (prefill form)
+  // Edit (only admin)
   const handleEdit = (patient) => {
     formik.setValues({
+      _id: patient._id,
       name: patient.name,
       age: patient.age,
       gender: patient.gender,
       hemo: patient.hemo,
     });
-    formik.setFieldValue('_id', patient._id); // track editing mode
   };
 
-  // Modify form submit to handle edit vs add
+  // Form validation schema
+  const validationSchema = Yup.object({
+    name: Yup.string().required('Name is required'),
+    age: Yup.number()
+      .required('Age is required')
+      .positive('Age must be positive')
+      .integer('Age must be an integer'),
+    gender: Yup.string().required('Gender is required'),
+    hemo: Yup.number()
+      .required('Hemoglobin level is required')
+      .positive('Hemoglobin must be positive'),
+  });
+
+  // Formik (only admin can use)
   const formik = useFormik({
     initialValues: {
       _id: null,
@@ -84,17 +115,18 @@ export default function HemoglobinTestApp() {
       gender: 'M',
       hemo: '',
     },
+    validationSchema,
     onSubmit: async (values, { resetForm }) => {
       const payload = {
         name: values.name,
         age: Number(values.age),
         gender: values.gender,
         hemo: Number(values.hemo),
+        userId: auth.user.id,
       };
 
       try {
         if (values._id) {
-          // Update existing
           const updated = await hemoglobinService.updatePatient(
             values._id,
             payload
@@ -103,7 +135,6 @@ export default function HemoglobinTestApp() {
             prev.map((p) => (p._id === updated._id ? updated : p))
           );
         } else {
-          // Add new
           const saved = await hemoglobinService.addPatient(payload);
           setPatients((prev) => [...prev, saved]);
         }
@@ -124,7 +155,7 @@ export default function HemoglobinTestApp() {
     return Object.entries(counts).map(([name, value]) => ({ name, value }));
   }, [patients]);
 
-  // Badge component
+  // Badge
   function CategoryBadge({ category }) {
     let styles = '';
     let Icon = null;
@@ -149,7 +180,7 @@ export default function HemoglobinTestApp() {
 
   return (
     <div
-      className="p-6 mx-auto"
+      className="p-6 mx-auto min-h-screen"
       style={{ backgroundImage: "url('/images/bg.jpeg')" }}
     >
       <h1 className="text-3xl font-bold mb-6 text-center text-white">
@@ -166,11 +197,12 @@ export default function HemoglobinTestApp() {
         ))}
       </div>
 
-      {/* Input form with Formik */}
+      {/* Only admins can add/edit patients */}
       <form
         onSubmit={formik.handleSubmit}
         className="bg-white shadow rounded p-6 mb-8 flex flex-col gap-4 w-full lg:w-1/2 mx-auto"
       >
+        {/* Inputs */}
         <label className="flex flex-col">
           <span className="font-medium mb-1">Name</span>
           <input
@@ -178,7 +210,11 @@ export default function HemoglobinTestApp() {
             {...formik.getFieldProps('name')}
             className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
           />
+          {formik.touched.name && formik.errors.name && (
+            <span className="text-red-600 text-sm">{formik.errors.name}</span>
+          )}
         </label>
+
         <label className="flex flex-col">
           <span className="font-medium mb-1">Age</span>
           <input
@@ -186,6 +222,9 @@ export default function HemoglobinTestApp() {
             {...formik.getFieldProps('age')}
             className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
           />
+          {formik.touched.age && formik.errors.age && (
+            <span className="text-red-600 text-sm">{formik.errors.age}</span>
+          )}
         </label>
 
         <label className="flex flex-col">
@@ -197,6 +236,9 @@ export default function HemoglobinTestApp() {
             <option value="M">Male</option>
             <option value="F">Female</option>
           </select>
+          {formik.touched.gender && formik.errors.gender && (
+            <span className="text-red-600 text-sm">{formik.errors.gender}</span>
+          )}
         </label>
 
         <label className="flex flex-col">
@@ -207,6 +249,9 @@ export default function HemoglobinTestApp() {
             {...formik.getFieldProps('hemo')}
             className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
           />
+          {formik.touched.hemo && formik.errors.hemo && (
+            <span className="text-red-600 text-sm">{formik.errors.hemo}</span>
+          )}
         </label>
 
         {/* Real-time preview */}
@@ -219,7 +264,7 @@ export default function HemoglobinTestApp() {
           type="submit"
           className="px-4 py-2 bg-blue-600 text-white rounded mt-2 hover:bg-blue-700 transition"
         >
-          Add Patient
+          {formik.values._id ? 'Update Patient' : 'Add Patient'}
         </button>
       </form>
 
@@ -244,13 +289,14 @@ export default function HemoglobinTestApp() {
         <table className="min-w-full text-sm">
           <thead className="bg-gray-100 sticky top-0">
             <tr>
-              <th className="p-2 text-left">ID</th>
+              <th className="p-2 text-left">S.No</th>
               <th className="p-2 text-left">Name</th>
               <th className="p-2 text-left">Age</th>
               <th className="p-2 text-left">Gender</th>
               <th className="p-2 text-left">Hemoglobin (g/dL)</th>
               <th className="p-2 text-left">Category</th>
-              <th className="p-2 text-left">Actions</th>
+              <th className="p-2 text-left">Suggestion</th>
+              {isAdminAuth && <th className="p-2 text-left">Actions</th>}
             </tr>
           </thead>
           <tbody>
@@ -264,22 +310,25 @@ export default function HemoglobinTestApp() {
                 <td className="p-2">
                   <CategoryBadge category={p.category} />
                 </td>
-                <td className="p-2 flex gap-2">
-                  <button
-                    onClick={() => handleEdit(p)}
-                    className="text-blue-600 hover:text-blue-800"
-                    title="Edit"
-                  >
-                    <Pencil size={18} />
-                  </button>
-                  <button
-                    onClick={() => handleDelete(p._id)}
-                    className="text-red-600 hover:text-red-800"
-                    title="Delete"
-                  >
-                    <Trash2 size={18} />
-                  </button>
-                </td>
+                <td className="p-2">{getSuggestion(p.category)}</td>
+                {isAdminAuth && (
+                  <td className="p-2 flex gap-2">
+                    <button
+                      onClick={() => handleEdit(p)}
+                      className="text-blue-600 hover:text-blue-800"
+                      title="Edit"
+                    >
+                      <Pencil size={18} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(p._id)}
+                      className="text-red-600 hover:text-red-800"
+                      title="Delete"
+                    >
+                      <Trash2 size={18} />
+                    </button>
+                  </td>
+                )}
               </tr>
             ))}
           </tbody>

@@ -8,6 +8,7 @@ const patientValidationSchema = Joi.object({
   age: Joi.number().required(),
   gender: Joi.string().valid('M', 'F').required(),
   hemo: Joi.number().required(),
+  userId: Joi.required(),
   //   category: Joi.required(),
 });
 
@@ -27,6 +28,7 @@ function classifyHemoglobin({ gender, hemo }) {
 const patientCtrl = {
   createPatient,
   getPatients,
+  getPatientByUserId,
   getPatientById,
   updatePatient,
   deletePatient,
@@ -40,11 +42,18 @@ async function createPatient(req) {
     const { error } = patientValidationSchema.validate(req.body);
     if (error) throw Error(error.details[0].message);
 
-    const { age, gender, hemo, name } = req.body;
+    const { age, gender, hemo, name, userId } = req.body;
 
     const category = classifyHemoglobin({ gender, hemo });
 
-    const patient = new Patient({ age, gender, hemo, category, name });
+    const patient = new Patient({
+      age,
+      gender,
+      hemo,
+      category,
+      name,
+      userId,
+    });
     await patient.save();
 
     return patient;
@@ -72,6 +81,17 @@ async function getPatientById(req) {
   try {
     const { id } = req.params;
     const patient = await Patient.findById(id);
+    if (!patient) throw Error('Patient not found');
+    return patient;
+  } catch (e) {
+    throw handleControllerError(e);
+  }
+}
+
+async function getPatientByUserId(req) {
+  try {
+    const { userId } = req.params;
+    const patient = await Patient.find({ userId });
     if (!patient) throw Error('Patient not found');
     return patient;
   } catch (e) {

@@ -1,5 +1,6 @@
 const API_ENDPOINTS = {
   PATIENTS: '/patients',
+  PATIENTS_BY_USER_ID: (userId) => `/patients/me/${userId}`,
   // App routes
   SIGNUP_API: '/auth/sign-up',
   LOGIN_API: '/auth/login',
