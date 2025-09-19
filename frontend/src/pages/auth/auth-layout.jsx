@@ -6,9 +6,7 @@ const AuthLayout = () => {
   return (
     <div className="w-full min-h-screen">
       <div className="flex flex-col items-center justify-center">
-        <div className="text-4xl font-bold mx-auto my-8">
-          Hemoglobin Project
-        </div>
+        <div className="text-4xl font-bold mx-auto my-8">KnowYourHB</div>
         <div>
           <Outlet />
         </div>
