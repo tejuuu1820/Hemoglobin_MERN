@@ -1,0 +1,76 @@
+:root {
+  --accent: #d63636;
+  --success: #2e7d32;
+  --warning: #f57c00;
+  --muted: #666;
+}
+
+.page-wrap {
+  min-height: 100vh;
+}
+
+.bg-cells .cell {
+  position: absolute;
+  background: radial-gradient(
+    circle at 30% 30%,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.05) 15%,
+    rgba(214, 54, 54, 0.95) 35%,
+    rgba(200, 10, 10, 0.85) 100%
+  );
+  border-radius: 50% / 60%;
+  filter: blur(0.6px);
+  opacity: 0.95;
+  animation: floatUp linear infinite;
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.08),
+    inset -8px -6px 18px rgba(0, 0, 0, 0.08);
+}
+
+@keyframes floatUp {
+  from {
+    transform: translateY(120vh) rotate(10deg) scale(0.6);
+    opacity: 0.95;
+  }
+  40% {
+    opacity: 0.9;
+  }
+  to {
+    transform: translateY(-40vh) rotate(-20deg) scale(1.1);
+    opacity: 0.12;
+  }
+}
+
+/* Badges */
+.badge {
+  display: inline-block;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 700;
+  font-size: 13px;
+  color: white;
+}
+.badge.low {
+  background: var(--warning);
+  color: #200;
+}
+.badge.normal {
+  background: var(--success);
+}
+.badge.high {
+  background: var(--accent);
+}
+
+/* Row colored borders */
+.low {
+  border-left: 6px solid var(--warning);
+  background: #fff8ef;
+}
+.normal {
+  border-left: 6px solid var(--success);
+  background: #f6fff6;
+}
+.high {
+  border-left: 6px solid var(--accent);
+  background: #fff5f5;
+  color: #2c2c2c;
+}
