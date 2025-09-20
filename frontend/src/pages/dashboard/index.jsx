@@ -256,6 +256,7 @@ export default function HemoglobinTestApp() {
                 </span>
                 <input
                   type="number"
+                  disabled={true}
                   step="0.1"
                   {...formik.getFieldProps('hemo')}
                   className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
