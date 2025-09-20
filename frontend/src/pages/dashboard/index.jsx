@@ -259,7 +259,7 @@ export default function HemoglobinTestApp() {
                   disabled={true}
                   step="0.1"
                   {...formik.getFieldProps('hemo')}
-                  className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
+                  className="border p-2 rounded focus:ring-2 focus:ring-blue-400 cursor-not-allowed"
                 />
                 {formik.touched.hemo && formik.errors.hemo && (
                   <span className="text-red-600 text-sm">
