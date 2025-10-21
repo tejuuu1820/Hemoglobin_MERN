@@ -323,7 +323,7 @@ export default function HemoglobinTestApp() {
                 {patients.map((p, index) => (
                   <tr
                     key={p._id}
-                    className={`border-t hover:bg-gray-50 transition ${p.category.toLowerCase()}`}
+                    className={`border-t hover:bg-gray-50 transition ${p.category?.toLowerCase()}`}
                   >
                     <td className="p-2">{index + 1}</td>
                     <td className="p-2">{p.name}</td>
