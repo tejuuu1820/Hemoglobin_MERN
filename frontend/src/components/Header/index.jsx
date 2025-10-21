@@ -9,7 +9,7 @@ const Header = () => {
 
   useEffect(() => {
     loadData();
-  },[]);
+  },[auth]);
 
   const loadData = async () => {
     try {

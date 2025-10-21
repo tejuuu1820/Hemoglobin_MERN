@@ -4,6 +4,7 @@ const Patient = require('../models/paitent.model');
 
 // ✅ Validation Schema
 const patientValidationSchema = Joi.object({
+  email: Joi.required(),
   name: Joi.required(),
   age: Joi.number().required(),
   gender: Joi.string().valid('M', 'F').required(),
@@ -42,11 +43,12 @@ async function createPatient(req) {
     const { error } = patientValidationSchema.validate(req.body);
     if (error) throw Error(error.details[0].message);
 
-    const { age, gender, hemo, name, userId } = req.body;
+    const { age, gender, hemo, name, userId ,email} = req.body;
 
     const category = classifyHemoglobin({ gender, hemo });
 
     const patient = new Patient({
+      email,
       age,
       gender,
       hemo,
@@ -91,7 +93,7 @@ async function getPatientById(req) {
 async function getPatientByUserId(req) {
   try {
     const { userId } = req.params;
-    const patient = await Patient.find({ userId });
+    const patient = await Patient.find({ email:userId });
     if (!patient) throw Error('Patient not found');
     return patient;
   } catch (e) {
@@ -106,12 +108,12 @@ async function updatePatient(req) {
     const { error } = patientValidationSchema.validate(req.body);
     if (error) throw Error(error.details[0].message);
 
-    const { age, gender, hemo } = req.body;
+    const { age, gender, hemo,email } = req.body;
     const category = classifyHemoglobin({ gender, hemo });
 
     const patient = await Patient.findByIdAndUpdate(
       id,
-      { age, gender, hemo, category },
+      { age, gender, hemo, category,email },
       { new: true }
     );
 

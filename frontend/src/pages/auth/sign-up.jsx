@@ -19,6 +19,7 @@ function SignUp() {
   const [showPassword, setShowPassword] = useState(false);
 
   const isAdminSignup = location.pathname === '/auth/registration/admin';
+  console.log(ROLE_MODE)
 
   const formik = useFormik({
     initialValues,
@@ -31,7 +32,7 @@ function SignUp() {
           email: values.email,
           password: values.password,
           confirm_password: values.confirm_password,
-          role: ROLE_MODE,
+          role: 'admin',
         };
         const response = await authServices.signUp(payload);
         if (response) {

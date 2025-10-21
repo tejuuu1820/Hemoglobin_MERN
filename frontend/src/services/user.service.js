@@ -11,8 +11,22 @@ const getUserById = async (userId) => {
   }
 };
 
+const deleteUserByEmail = async (email) => {
+  try {
+    const res = await api.delete(API_ENDPOINTS.DELETE_USER_DETAILS_BY_EMAIL(email));
+    return res.data;
+  } catch (e) {
+    console.error('Get Patients Error:', e);
+    throw e;
+  }
+};
+
+
+
+
 const userServices = {
   getUserById,
+  deleteUserByEmail
 };
 
 export default userServices;

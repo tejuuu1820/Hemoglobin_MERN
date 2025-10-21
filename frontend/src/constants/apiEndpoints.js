@@ -3,6 +3,8 @@ const API_ENDPOINTS = {
   PATIENTS_BY_USER_ID: (userId) => `/patients/me/${userId}`,
 
   GET_USER_DETAILS_BY_ID: (userId) => `/user/${userId}`,
+  DELETE_USER_DETAILS_BY_EMAIL: (email) => `/user/${email}`,
+
   // App routes
   SIGNUP_API: '/auth/sign-up',
   LOGIN_API: '/auth/login',

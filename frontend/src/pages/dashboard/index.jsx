@@ -1,5 +1,5 @@
 import { useFormik } from 'formik';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, UserPlus } from 'lucide-react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   Bar,
@@ -12,23 +12,31 @@ import {
 } from 'recharts';
 import * as Yup from 'yup';
 import { useAuth } from '../../context/auth-context';
+import authServices from '../../services/auth.service';
 import hemoglobinService from '../../services/hemoglobin.service';
-import './HemoglobinTestApp.css'; // Import the CSS below
+import userServices from '../../services/user.service';
+import './HemoglobinTestApp.css';
 
 export default function HemoglobinTestApp() {
   const [patients, setPatients] = useState([]);
   const [loading, setLoading] = useState(false);
   const { isAdminAuth, auth } = useAuth();
+  const [modalInfo, setModalInfo] = useState(null); // for popup
+  const [initialValues,setInitialValues] = useState({
+    _id: null, 
+    name: '',
+    email:'', 
+    age: '', 
+    gender: 'M', 
+    hemo: ''
+  })
+
 
   // ---- Floating blood cells ----
   useEffect(() => {
     const bg = document.getElementById('bgCells');
     if (!bg) return;
-
-    const count = Math.min(
-      26,
-      Math.max(10, Math.round(window.innerWidth / 80))
-    );
+    const count = Math.min(26, Math.max(10, Math.round(window.innerWidth / 80)));
     for (let i = 0; i < count; i++) {
       const el = document.createElement('div');
       el.className = 'cell';
@@ -50,14 +58,14 @@ export default function HemoglobinTestApp() {
   // ---- Load patient data ----
   useEffect(() => {
     loadData();
-  }, [isAdminAuth]);
+  }, [isAdminAuth,auth]);
 
   const loadData = async () => {
     setLoading(true);
     try {
       const data = isAdminAuth
         ? await hemoglobinService.getPatients()
-        : await hemoglobinService.getPatientsByUserId(auth.user.id);
+        : await hemoglobinService.getPatientsByUserId(auth.user.email);
       setPatients(data.data);
     } catch (error) {
       console.error('Error fetching patients:', error);
@@ -97,6 +105,7 @@ export default function HemoglobinTestApp() {
     if (!window.confirm('Are you sure you want to delete this record?')) return;
     try {
       await hemoglobinService.deletePatient(id);
+      await userServices.deleteUserByEmail(auth.user.email)
       setPatients((prev) => prev.filter((p) => p._id !== id));
     } catch (error) {
       console.error('Error deleting patient:', error);
@@ -113,6 +122,32 @@ export default function HemoglobinTestApp() {
     });
   };
 
+  // ---- Generate Credentials ----
+  const handleGenerateCreds = async (patient) => {
+    const username = `${patient.name}_${patient.age}`;
+    const email = `${patient.email}`;
+    const password = `${patient.name}_${patient.age}`;
+
+    const payload = {
+      username,
+      email,
+      password,
+      confirm_password: password,
+    };
+
+    try {
+      const res = await authServices.signUp(payload);
+      if (res) {
+        setModalInfo({ email, password }); // show modal
+      } else {
+        setModalInfo({email:patient.email,password})
+      }
+    } catch (error) {
+      console.error('Error generating credentials:', error);
+      alert('Error generating credentials.');
+    }
+  };
+
   // ---- Formik ----
   const validationSchema = Yup.object({
     name: Yup.string().required('Name is required'),
@@ -124,14 +159,17 @@ export default function HemoglobinTestApp() {
     hemo: Yup.number()
       .required('Hemoglobin level is required')
       .positive('Hemoglobin must be positive'),
+    email: Yup.string().required("Email is required")
   });
 
   const formik = useFormik({
-    initialValues: { _id: null, name: '', age: '', gender: 'M', hemo: '' },
+    initialValues,
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
+      setInitialValues({...values});
       const payload = {
         name: values.name,
+        email: `${values.email}`,
         gender: values.gender,
         age: Number(values.age),
         hemo: Number(values.hemo),
@@ -139,10 +177,7 @@ export default function HemoglobinTestApp() {
       };
       try {
         if (values._id) {
-          const updated = await hemoglobinService.updatePatient(
-            values._id,
-            payload
-          );
+          const updated = await hemoglobinService.updatePatient(values._id, payload);
           setPatients((prev) =>
             prev.map((p) => (p._id === updated._id ? updated : p))
           );
@@ -220,7 +255,19 @@ export default function HemoglobinTestApp() {
                   </span>
                 )}
               </label>
-
+              <label className="flex flex-col">
+                <span className="font-medium mb-1">Email</span>
+                <input
+                  type="email"
+                  {...formik.getFieldProps('email')}
+                  className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
+                />
+                {formik.touched.name && formik.errors.name && (
+                  <span className="text-red-600 text-sm">
+                    {formik.errors.email}
+                  </span>
+                )}
+              </label>
               <label className="flex flex-col">
                 <span className="font-medium mb-1">Age</span>
                 <input
@@ -257,7 +304,6 @@ export default function HemoglobinTestApp() {
                 </span>
                 <input
                   type="number"
-                  disabled={false}
                   step="0.1"
                   {...formik.getFieldProps('hemo')}
                   className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
@@ -316,7 +362,12 @@ export default function HemoglobinTestApp() {
                   <th className="p-2 text-left">Hemoglobin (g/dL)</th>
                   <th className="p-2 text-left">Category</th>
                   <th className="p-2 text-left">Suggestion</th>
-                  {isAdminAuth && <th className="p-2 text-left">Actions</th>}
+                  {isAdminAuth && (
+                    <>
+                      <th className="p-2 text-left">Actions</th>
+                      <th className="p-2 text-left">Generate Creds</th>
+                    </>
+                  )}
                 </tr>
               </thead>
               <tbody>
@@ -335,22 +386,32 @@ export default function HemoglobinTestApp() {
                     </td>
                     <td className="p-2">{getSuggestion(p.category)}</td>
                     {isAdminAuth && (
-                      <td className="p-2 flex gap-2">
-                        <button
-                          onClick={() => handleEdit(p)}
-                          className="text-blue-600 hover:text-blue-800"
-                          title="Edit"
-                        >
-                          <Pencil size={18} />
-                        </button>
-                        <button
-                          onClick={() => handleDelete(p._id)}
-                          className="text-red-600 hover:text-red-800"
-                          title="Delete"
-                        >
-                          <Trash2 size={18} />
-                        </button>
-                      </td>
+                      <>
+                        <td className="p-2 flex gap-2">
+                          <button
+                            onClick={() => handleEdit(p)}
+                            className="text-blue-600 hover:text-blue-800"
+                            title="Edit"
+                          >
+                            <Pencil size={18} />
+                          </button>
+                          <button
+                            onClick={() => handleDelete(p._id)}
+                            className="text-red-600 hover:text-red-800"
+                            title="Delete"
+                          >
+                            <Trash2 size={18} />
+                          </button>
+                        </td>
+                        <td className="p-2">
+                          <button
+                            onClick={() => handleGenerateCreds(p)}
+                            className="flex items-center gap-1 bg-green-600 text-white px-3 py-1 rounded hover:bg-green-700 transition"
+                          >
+                            <UserPlus size={16} /> Generate Credentials
+                          </button>
+                        </td>
+                      </>
                     )}
                   </tr>
                 ))}
@@ -364,6 +425,32 @@ export default function HemoglobinTestApp() {
           </footer>
         </div>
       </div>
+
+      {/* Modal */}
+      {modalInfo && (
+        <div className="fixed inset-0 bg-black/40 flex justify-center items-center z-50">
+          <div className="bg-white p-6 rounded-lg shadow-lg text-center w-80">
+            <h2 className="text-xl font-bold mb-2">User Created!</h2>
+            <p className="text-gray-700 mb-4">
+              The user has been successfully created. Below are the credentials:
+            </p>
+            <div className="text-left mb-4">
+              <p>
+                <strong>Email:</strong> {modalInfo.email}
+              </p>
+              <p>
+                <strong>Password:</strong> {modalInfo.password}
+              </p>
+            </div>
+            <button
+              onClick={() => setModalInfo(null)}
+              className="px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition"
+            >
+              Close
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
