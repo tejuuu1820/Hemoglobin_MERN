@@ -131,7 +131,8 @@ export default function HemoglobinTestApp() {
     validationSchema,
     onSubmit: async (values, { resetForm }) => {
       const payload = {
-        ...values,
+        name: values.name,
+        gender: values.gender,
         age: Number(values.age),
         hemo: Number(values.hemo),
         userId: auth.user.id,
@@ -256,10 +257,10 @@ export default function HemoglobinTestApp() {
                 </span>
                 <input
                   type="number"
-                  disabled={true}
+                  disabled={false}
                   step="0.1"
                   {...formik.getFieldProps('hemo')}
-                  className="border p-2 rounded focus:ring-2 focus:ring-blue-400 cursor-not-allowed"
+                  className="border p-2 rounded focus:ring-2 focus:ring-blue-400"
                 />
                 {formik.touched.hemo && formik.errors.hemo && (
                   <span className="text-red-600 text-sm">
