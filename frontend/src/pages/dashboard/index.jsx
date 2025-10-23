@@ -352,7 +352,8 @@ const applyFilterAndSearch = (filter, query) => {
         </div>
 
         {/* Form Section */}
-        <form
+        {isAdminAuth && (
+          <form
           onSubmit={formik.handleSubmit}
           className="bg-white shadow-md rounded-xl p-6 mb-8 border border-gray-200"
         >
@@ -423,6 +424,7 @@ const applyFilterAndSearch = (filter, query) => {
             <p className="text-sm">{getSuggestion(previewCategory)}</p>
           </div>
         </form>
+        )}
 
         {/* Average Hemoglobin */}
         {patients.length > 0 && (
@@ -435,30 +437,30 @@ const applyFilterAndSearch = (filter, query) => {
         )}
 
         {/* Filter Buttons */}
-<div className="flex flex-col sm:flex-row justify-between gap-3 mb-5">
-  <input
-    type="text"
-    placeholder="Search by name..."
-    value={searchQuery}
-    onChange={handleSearch}
-    className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 flex-1"
-  />
-  <div className="flex gap-3">
-    {["All", "Low", "Normal", "High"].map((f) => (
-      <button
-        key={f}
-        onClick={() => handleFilter(f)}
-        className={`px-4 py-2 rounded-lg font-medium shadow-sm ${
-          selectedFilter === f
-            ? "bg-blue-600 text-white"
-            : "bg-gray-200 text-gray-700"
-        }`}
-      >
-        {f}
-      </button>
-    ))}
-  </div>
-</div>
+        <div className="flex flex-col sm:flex-row justify-between gap-3 mb-5">
+          <input
+            type="text"
+            placeholder="Search by name..."
+            value={searchQuery}
+            onChange={handleSearch}
+            className="p-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-400 flex-1"
+          />
+          <div className="flex gap-3">
+            {["All", "Low", "Normal", "High"].map((f) => (
+              <button
+                key={f}
+                onClick={() => handleFilter(f)}
+                className={`px-4 py-2 rounded-lg font-medium shadow-sm ${
+                  selectedFilter === f
+                    ? "bg-blue-600 text-white"
+                    : "bg-gray-200 text-gray-700"
+                }`}
+              >
+                {f}
+              </button>
+            ))}
+          </div>
+        </div>
 
         {/* Table Section */}
         <div className="overflow-x-auto overflow-y-auto max-h-[400px] bg-white shadow-md rounded-xl border border-gray-200 mb-10">
