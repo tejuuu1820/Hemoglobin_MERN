@@ -474,7 +474,9 @@ const applyFilterAndSearch = (filter, query) => {
         <th className="px-4 py-2 font-semibold text-gray-700">Hemoglobin</th>
         <th className="px-4 py-2 font-semibold text-gray-700">Category</th>
         <th className="px-4 py-2 font-semibold text-gray-700 text-center">Visualization</th>
+        {isAdminAuth && (
         <th className="px-4 py-2 font-semibold text-gray-700">Actions</th>
+        )}
       </tr>
     </thead>
     <tbody className="divide-y">
@@ -508,7 +510,8 @@ const applyFilterAndSearch = (filter, query) => {
               />
             </div>
           </td>
-          <td className="px-4 py-2 flex gap-2">
+          {isAdminAuth && (
+            <td className="px-4 py-2 flex gap-2">
             <button
               onClick={() => handleEdit(p)}
               className="bg-yellow-400 px-2 py-1 rounded text-white hover:bg-yellow-500"
@@ -528,6 +531,7 @@ const applyFilterAndSearch = (filter, query) => {
               Generate Creds
             </button>
           </td>
+          )}
         </tr>
       ))}
     </tbody>
